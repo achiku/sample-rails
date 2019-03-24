@@ -1,0 +1,8 @@
+[psql]
+  dbname = "rails_todo"
+  host   = "localhost"
+  port   = 5432
+  sslmode = 'disable'
+  user   = "rails_todo_api"
+  schema = "rails_todo_api"
+  blacklist = ["ar_internal_metadata ", "schema_migrations"]

@@ -7,6 +7,7 @@ import (
 
 	"github.com/achiku/sample-rails/api/dao"
 	"github.com/achiku/sample-rails/api/infra"
+	_ "github.com/lib/pq" // postgres driver
 )
 
 type User struct {

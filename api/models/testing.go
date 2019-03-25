@@ -1,47 +1,73 @@
 package models
 
+import (
+	"bytes"
+	"database/sql"
+	"log"
+	"os"
+	"os/exec"
+	"testing"
 
-// TestCreateSchema set up test schema
-func TestCreateSchema(cfg DBConfig, schema, user string) error {
-	db, err := db.Open()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+	txdb "github.com/DATA-DOG/go-txdb"
+	"github.com/achiku/sample-rails/api/infra"
+	_ "github.com/lib/pq" // postgres driver
+)
 
-	_, err = db.Exec(fmt.Sprintf("CREATE SCHEMA %s AUTHORIZATION %s", schema, user))
-	if err != nil {
-		log.Printf("failed to create test schema: %s", schema)
-		return err
-	}
-	return nil
+func init() {
+	txdb.Register("txdb", "pq", "postgres://rails_todo_test@localhost:5432/rails_todo_test?sslmode=disable")
 }
 
-// TestDropSchema set up test schema
-func TestDropSchema(cfg DBConfig, schema string) error {
-	db, err := db.Open()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	_, err = db.Exec(fmt.Sprintf("DROP SCHEMA %s CASCADE", schema))
-	if err != nil {
-		log.Printf("failed to create test schema: %s", schema)
-		return err
-	}
-	return nil
-}
-
-// TestCreateTables create test tables
-func TestCreateTables(cfg DBConfig, path string) error {
+// TestCreateDB set up test db
+func TestCreateDB(path string) error {
 	orgPwd, _ := os.Getwd()
 	defer func() {
 		os.Chdir(orgPwd)
 	}()
 
 	os.Chdir(path)
-	cmd := exec.Command("alembic", "upgrade", "head", "--sql")
+	cmd := exec.Command("rails", "db:create", "RAILS_ENV=test")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("failed to execute rake:\n %s", stderr.String())
+		return err
+	}
+	return nil
+}
+
+// TestDropDB set up test db
+func TestDropDB(path string) error {
+	orgPwd, _ := os.Getwd()
+	defer func() {
+		os.Chdir(orgPwd)
+	}()
+
+	os.Chdir(path)
+	cmd := exec.Command("rails", "db:drop", "RAILS_ENV=test")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("failed to execute rake:\n %s", stderr.String())
+		return err
+	}
+	return nil
+}
+
+// TestCreateTables create test tables
+func TestCreateTables(path string) error {
+	orgPwd, _ := os.Getwd()
+	defer func() {
+		os.Chdir(orgPwd)
+	}()
+
+	os.Chdir(path)
+	cmd := exec.Command("rails", "db:migrate", "RAILS_ENV=test")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -51,29 +77,11 @@ func TestCreateTables(cfg DBConfig, path string) error {
 		log.Printf("failed to execute alembic:\n %s", stderr.String())
 		return err
 	}
-
-	poolcfg := pgx.ConnPoolConfig{
-		ConnConfig: pgx.ConnConfig{
-			Host:     "localhost",
-			User:     cfg.User,
-			Database: cfg.DBName,
-			Port:     5432,
-		},
-	}
-	db, err := pgx.NewConnPool(poolcfg)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(stdout.String())
-	if err != nil {
-		log.Println("failed to create test tables")
-		return err
-	}
 	return nil
 }
 
 // TestSetupTx create tx and cleanup func for test
-func TestSetupTx(t *testing.T) (Txer, func()) {
+func TestSetupTx(t *testing.T) (infra.Txer, func()) {
 	db, err := sql.Open("txdb", "dummy")
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +99,7 @@ func TestSetupTx(t *testing.T) (Txer, func()) {
 }
 
 // TestSetupDB create db and cleanup func for test
-func TestSetupDB(t *testing.T) (DBer, func()) {
+func TestSetupDB(t *testing.T) (infra.DBer, func()) {
 	db, err := sql.Open("txdb", "dummy")
 	if err != nil {
 		t.Fatal(err)

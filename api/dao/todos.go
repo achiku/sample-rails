@@ -392,7 +392,7 @@ func (o *Todo) User(mods ...qm.QueryMod) userQuery {
 	queryMods = append(queryMods, mods...)
 
 	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"rails_todo_api\".\"users\"")
+	queries.SetFrom(query.Query, "\"users\"")
 
 	return query
 }
@@ -438,7 +438,7 @@ func (todoL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular bool
 		return nil
 	}
 
-	query := NewQuery(qm.From(`rails_todo_api.users`), qm.WhereIn(`id in ?`, args...))
+	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
 	}
@@ -510,7 +510,7 @@ func (o *Todo) SetUser(ctx context.Context, exec boil.ContextExecutor, insert bo
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"rails_todo_api\".\"todos\" SET %s WHERE %s",
+		"UPDATE \"todos\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"users_id"}),
 		strmangle.WhereClause("\"", "\"", 2, todoPrimaryKeyColumns),
 	)
@@ -547,7 +547,7 @@ func (o *Todo) SetUser(ctx context.Context, exec boil.ContextExecutor, insert bo
 
 // Todos retrieves all the records using an executor.
 func Todos(mods ...qm.QueryMod) todoQuery {
-	mods = append(mods, qm.From("\"rails_todo_api\".\"todos\""))
+	mods = append(mods, qm.From("\"todos\""))
 	return todoQuery{NewQuery(mods...)}
 }
 
@@ -561,7 +561,7 @@ func FindTodo(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCo
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"rails_todo_api\".\"todos\" where \"id\"=$1", sel,
+		"select %s from \"todos\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -614,9 +614,9 @@ func (o *Todo) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"rails_todo_api\".\"todos\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"todos\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"rails_todo_api\".\"todos\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"todos\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -681,7 +681,7 @@ func (o *Todo) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 			return 0, errors.New("dao: unable to update todos, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"rails_todo_api\".\"todos\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"todos\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
 			strmangle.WhereClause("\"", "\"", len(wl)+1, todoPrimaryKeyColumns),
 		)
@@ -762,7 +762,7 @@ func (o TodoSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"rails_todo_api\".\"todos\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"todos\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, todoPrimaryKeyColumns, len(o)))
 
@@ -851,7 +851,7 @@ func (o *Todo) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 			conflict = make([]string, len(todoPrimaryKeyColumns))
 			copy(conflict, todoPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"rails_todo_api\".\"todos\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"todos\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(todoType, todoMapping, insert)
 		if err != nil {
@@ -910,7 +910,7 @@ func (o *Todo) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), todoPrimaryKeyMapping)
-	sql := "DELETE FROM \"rails_todo_api\".\"todos\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"todos\" WHERE \"id\"=$1"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -979,7 +979,7 @@ func (o TodoSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"rails_todo_api\".\"todos\" WHERE " +
+	sql := "DELETE FROM \"todos\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, todoPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1034,7 +1034,7 @@ func (o *TodoSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"rails_todo_api\".\"todos\".* FROM \"rails_todo_api\".\"todos\" WHERE " +
+	sql := "SELECT \"todos\".* FROM \"todos\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, todoPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
@@ -1052,7 +1052,7 @@ func (o *TodoSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 // TodoExists checks if the Todo row exists.
 func TodoExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"rails_todo_api\".\"todos\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"todos\" where \"id\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)

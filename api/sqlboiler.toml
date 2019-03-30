@@ -4,5 +4,5 @@
   port   = 5432
   sslmode = 'disable'
   user   = "rails_todo_api"
-  schema = "rails_todo_api"
+  schema = "public"
   blacklist = ["ar_internal_metadata ", "schema_migrations"]

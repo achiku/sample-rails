@@ -412,7 +412,7 @@ func (q arInternalMetadatumQuery) Exists(ctx context.Context, exec boil.ContextE
 
 // ArInternalMetadata retrieves all the records using an executor.
 func ArInternalMetadata(mods ...qm.QueryMod) arInternalMetadatumQuery {
-	mods = append(mods, qm.From("\"rails_todo_api\".\"ar_internal_metadata\""))
+	mods = append(mods, qm.From("\"ar_internal_metadata\""))
 	return arInternalMetadatumQuery{NewQuery(mods...)}
 }
 
@@ -426,7 +426,7 @@ func FindArInternalMetadatum(ctx context.Context, exec boil.ContextExecutor, key
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"rails_todo_api\".\"ar_internal_metadata\" where \"key\"=$1", sel,
+		"select %s from \"ar_internal_metadata\" where \"key\"=$1", sel,
 	)
 
 	q := queries.Raw(query, key)
@@ -489,9 +489,9 @@ func (o *ArInternalMetadatum) Insert(ctx context.Context, exec boil.ContextExecu
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"rails_todo_api\".\"ar_internal_metadata\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"ar_internal_metadata\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"rails_todo_api\".\"ar_internal_metadata\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"ar_internal_metadata\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -562,7 +562,7 @@ func (o *ArInternalMetadatum) Update(ctx context.Context, exec boil.ContextExecu
 			return 0, errors.New("dao: unable to update ar_internal_metadata, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"rails_todo_api\".\"ar_internal_metadata\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"ar_internal_metadata\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
 			strmangle.WhereClause("\"", "\"", len(wl)+1, arInternalMetadatumPrimaryKeyColumns),
 		)
@@ -643,7 +643,7 @@ func (o ArInternalMetadatumSlice) UpdateAll(ctx context.Context, exec boil.Conte
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"rails_todo_api\".\"ar_internal_metadata\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"ar_internal_metadata\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, arInternalMetadatumPrimaryKeyColumns, len(o)))
 
@@ -740,7 +740,7 @@ func (o *ArInternalMetadatum) Upsert(ctx context.Context, exec boil.ContextExecu
 			conflict = make([]string, len(arInternalMetadatumPrimaryKeyColumns))
 			copy(conflict, arInternalMetadatumPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"rails_todo_api\".\"ar_internal_metadata\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"ar_internal_metadata\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(arInternalMetadatumType, arInternalMetadatumMapping, insert)
 		if err != nil {
@@ -799,7 +799,7 @@ func (o *ArInternalMetadatum) Delete(ctx context.Context, exec boil.ContextExecu
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), arInternalMetadatumPrimaryKeyMapping)
-	sql := "DELETE FROM \"rails_todo_api\".\"ar_internal_metadata\" WHERE \"key\"=$1"
+	sql := "DELETE FROM \"ar_internal_metadata\" WHERE \"key\"=$1"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -868,7 +868,7 @@ func (o ArInternalMetadatumSlice) DeleteAll(ctx context.Context, exec boil.Conte
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"rails_todo_api\".\"ar_internal_metadata\" WHERE " +
+	sql := "DELETE FROM \"ar_internal_metadata\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, arInternalMetadatumPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -923,7 +923,7 @@ func (o *ArInternalMetadatumSlice) ReloadAll(ctx context.Context, exec boil.Cont
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"rails_todo_api\".\"ar_internal_metadata\".* FROM \"rails_todo_api\".\"ar_internal_metadata\" WHERE " +
+	sql := "SELECT \"ar_internal_metadata\".* FROM \"ar_internal_metadata\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, arInternalMetadatumPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
@@ -941,7 +941,7 @@ func (o *ArInternalMetadatumSlice) ReloadAll(ctx context.Context, exec boil.Cont
 // ArInternalMetadatumExists checks if the ArInternalMetadatum row exists.
 func ArInternalMetadatumExists(ctx context.Context, exec boil.ContextExecutor, key string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"rails_todo_api\".\"ar_internal_metadata\" where \"key\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"ar_internal_metadata\" where \"key\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)

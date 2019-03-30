@@ -9,12 +9,11 @@ import (
 	"testing"
 
 	txdb "github.com/DATA-DOG/go-txdb"
-	"github.com/achiku/sample-rails/api/infra"
 	_ "github.com/lib/pq" // postgres driver
 )
 
 func init() {
-	txdb.Register("txdb", "pq", "postgres://rails_todo_test@localhost:5432/rails_todo_test?sslmode=disable")
+	txdb.Register("txdb", "postgres", "postgres://rails_todo_api_test@localhost:5432/rails_todo_test?sslmode=disable")
 }
 
 // TestCreateDB set up test db
@@ -53,7 +52,7 @@ func TestDropDB(path string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("failed to execute rake:\n %s", stderr.String())
+		log.Printf("failed to execute rails db:drop :\n %s", stderr.String())
 		return err
 	}
 	return nil
@@ -74,14 +73,14 @@ func TestCreateTables(path string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("failed to execute alembic:\n %s", stderr.String())
+		log.Printf("failed to execute rails db:migrate :\n %s", stderr.String())
 		return err
 	}
 	return nil
 }
 
 // TestSetupTx create tx and cleanup func for test
-func TestSetupTx(t *testing.T) (infra.Txer, func()) {
+func TestSetupTx(t *testing.T) (Txer, func()) {
 	db, err := sql.Open("txdb", "dummy")
 	if err != nil {
 		t.Fatal(err)
@@ -99,7 +98,7 @@ func TestSetupTx(t *testing.T) (infra.Txer, func()) {
 }
 
 // TestSetupDB create db and cleanup func for test
-func TestSetupDB(t *testing.T) (infra.DBer, func()) {
+func TestSetupDB(t *testing.T) (DBer, func()) {
 	db, err := sql.Open("txdb", "dummy")
 	if err != nil {
 		t.Fatal(err)
